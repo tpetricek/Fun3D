@@ -1,1 +1,1 @@
-web: fsharpi-heroku script.fsx
+web: fsharpi-heroku server.fsx
