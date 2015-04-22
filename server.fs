@@ -1,6 +1,8 @@
-﻿#r "packages/FSharp.Data/lib/net40/FSharp.Data.dll"
+﻿#if INTERACTIVE
+#r "packages/FSharp.Data/lib/net40/FSharp.Data.dll"
 #r "packages/Suave/lib/net40/Suave.dll"
 #r "packages/FSharp.Compiler.Service/lib/net40/FSharp.Compiler.Service.dll"
+#endif
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Interactive.Shell
