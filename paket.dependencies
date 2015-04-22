@@ -1,0 +1,5 @@
+source https://nuget.org/api/v2
+
+nuget FSharp.Data
+nuget FSharp.Compiler.Service
+nuget Suave

@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>Fun 3D</title>
+
+  <!-- Standard page design and scripts -->
+  <script src="/scripts/jquery-2.0.3.js"></script>
+  <link href="/content/site.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/content/bootstrap.min.css">
+  <script src="/scripts/bootstrap.min.js"></script>
+
+  <!-- Fancy JavaScript libraries that we need -->
+  <script src="/scripts/three.min.js"></script>
+  <script src="/scripts/helvetiker_regular.typeface.js"></script>
+  <script src="/scripts/tracking.js"></script>
+  <script src="/scripts/face.min.js"></script>
+
+  <!-- Styles and scripts for the F# code editor -->
+  <link href="/content/funeditor.css" rel="stylesheet" />
+  <link href="/content/codemirror.css" rel="stylesheet" />
+  
+  <script src="/scripts/intellisense.js"></script>
+  <script src="/scripts/codemirror/codemirror.js"></script>
+  <script src="/scripts/codemirror/codemirror-intellisense.js"></script>
+  <script src="/scripts/codemirror/codemirror-compiler.js"></script>
+  <script src="/scripts/codemirror/mode/fsharp.js"></script>
+  <script src="/scripts/intellisense-server.js"></script>
+</head>
+<body style="background: #e0e0e0; background-size: 100% auto">
+  <div id="main" style="padding:10px 20px 0px 20px">
+    <img src="/content/logo.png" style="position:absolute;right:30px;top:5px;width:100px" />
+    <h1 style="margin-bottom:30px;font-size:50px;font-family:'Bookman Old Style';font-weight:bold">Fun 3D</h1>
+
+    <table style="width:100%;height:500px">
+      <tr>
+        <td style="width:50%">
+          <div id="editor" style="width:100%;height:100%;"></div>
+        </td>
+        <td style="width:50%;background:black;" id="first"></td>
+      </tr>
+    </table>
+    <div>
+      <button onclick="javascript:evaluateScript()">Run</button>
+      <span style="margin-left:20px">Tools:</span>
+      <button onclick="initTracking();">Track</button>
+      <select onchange="loadDemo(document.getElementById('demos').value);" id="demos">
+        <option value="">(Choose a demo)</option>
+        <option value="hello">Hello world</option>
+        <option value="movie">Movie box</option>
+        <option value="tower">Tower</option>
+        <option value="castle">Castle</option>
+        <option value="adcastle">Castle with video</option>
+        <option value="man">Man</option>
+      </select><br />
+    </div>
+
+    <video id="monitor" autoplay width="160" height="120" style="visibility: collapse; float:left;"></video>
+    <canvas id="videoImage" width="160" height="120" style="visibility: collapse; float:left;"></canvas>
+    <!-- <script>
+  navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+  window.URL = window.URL || window.webkitURL;
+
+  var camvideo = document.getElementById('monitor');
+
+  function gotStream(stream) {
+    alert('yo stream');
+    if (window.URL)
+    { camvideo.src = window.URL.createObjectURL(stream); }
+    else // Opera
+    { camvideo.src = stream; }
+
+    camvideo.onerror = function (e)
+    { stream.stop(); };
+
+    stream.onended = noStream;
+  }
+
+  function noStream(e) {
+    alert('no stream: ' + e.name);
+    var msg = 'No camera available.';
+    if (e.code == 1)
+    { msg = 'User denied access to use camera.'; }
+    //document.getElementById('errorMessage').textContent = msg;
+  }
+
+      if (!navigator.getUserMedia)
+      {
+          document.getElementById('errorMessage').innerHTML =
+              'Sorry. <code>navigator.getUserMedia()</code> is not available.';
+      } else {
+          navigator.getUserMedia({video: true}, gotStream, noStream);
+      }
+
+    </script> -->
+  </div>
+</body>
+</html>

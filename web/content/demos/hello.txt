@@ -1,0 +1,8 @@
+﻿#load "Fun3D.fsx"
+open Fun3D
+
+let main() = 
+  Fun.text "Hello world"
+  |> Fun.scale (0.01, 0.01, 0.01)
+  |> Fun.move (-3.0, 0.0, 0.0)
+  |> Fun.material (Mat.flat Color.orange)

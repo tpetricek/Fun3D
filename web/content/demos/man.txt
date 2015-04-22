@@ -1,0 +1,35 @@
+﻿#load "Fun3D.fsx"
+open Fun3D
+
+let head =
+  Fun.sphere
+  |> Fun.color Color.yellow
+  
+let hat =
+  Fun.cylinder
+  |> Fun.color Color.purple
+  |> Fun.scale (2.0,1.5,2.0)
+  |> Fun.move (0.0,1.5,0.0)
+
+let body =
+  Fun.cube
+  |> Fun.color Color.red
+  |> Fun.scale(2.0,2.5,1.0)
+  |> Fun.move(0.0,-2.1,0.0)
+
+let leg = 
+  Fun.cylinder
+  |> Fun.scale(1.0,2.5,1.0)
+  |> Fun.color Color.cyan
+
+let leg1 =
+  leg |> Fun.move (0.5,-4.0,0.0)
+let leg2 =
+  leg |> Fun.move (-0.5,-4.0,0.0)
+
+let main() = 
+  head $
+  hat  $ 
+  body $
+  leg1 $
+  leg2
