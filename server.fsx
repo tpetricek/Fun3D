@@ -238,7 +238,7 @@ let app =
 
 let serverConfig =
   let port = System.Environment.GetEnvironmentVariable("PORT")
-  { defaultConfig with 
+  { defaultConfig with
       homeFolder = Some homeFolder
       logger = Logging.Loggers.saneDefaultsFor Logging.LogLevel.Verbose
       bindings=[ ( if port = null then HttpBinding.mk' HTTP  "127.0.0.1" 8080
