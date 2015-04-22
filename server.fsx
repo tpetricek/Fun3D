@@ -244,8 +244,9 @@ let serverConfig =
       bindings=[ ( if port = null then HttpBinding.mk' HTTP  "127.0.0.1" 8080
                    else HttpBinding.mk' HTTP  "0.0.0.0" (int port) ) ] }
 
-let _, server = startWebServerAsync serverConfig app
-let cts = new System.Threading.CancellationTokenSource()
-Async.Start(server, cts.Token)
+startWebServer serverConfig app
 
+// let _, server = startWebServerAsync serverConfig app
+// let cts = new System.Threading.CancellationTokenSource()
+// Async.Start(server, cts.Token)
 // cts.Cancel()
