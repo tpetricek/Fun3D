@@ -1,1 +1,1 @@
-web: fsharpi-heroku server.fsx
+web: mono bin/Debug/Fun3D.exe
