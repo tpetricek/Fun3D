@@ -27,16 +27,16 @@ let extractIdentTokens line charIndex =
       | None, state -> () }
 
     let tokens = gatherTokens tokenizer 0L |> Seq.toArray
-    let idx = tokens |> Array.tryFindIndex(fun x -> 
+    let idx = tokens |> Array.tryFindIndex(fun x ->
       charIndex > x.LeftColumn && charIndex <= x.LeftColumn + x.FullMatchedLength)
 
     match idx with
-    | Some(endIndex) ->    
-        let startIndex = 
+    | Some(endIndex) ->
+        let startIndex =
             tokens.[0..endIndex]
             |> Array.rev
             |> Array.tryFindIndex (fun x -> x.TokenName <> "IDENT" && x.TokenName <> "DOT")
-            |> Option.map (fun x -> endIndex - x)    
+            |> Option.map (fun x -> endIndex - x)
         let startIndex = defaultArg startIndex 0
         let idents = tokens.[startIndex..endIndex] |> Array.filter (fun x -> x.TokenName = "IDENT")
         Some tokens.[endIndex], idents
@@ -47,15 +47,15 @@ let extractIdentTokens line charIndex =
 /// to be passed into the `GetDeclarations`, `GetMethods`, or other functions
 ///
 /// For tooltips and overlodas, set identOffset=0; For completion set identOffset=1
-let extractNames line charIndex identOffset =         
+let extractNames line charIndex identOffset =
     let charToken, tokens = extractIdentTokens line charIndex
     match charToken with
     | None -> 0, 0, []
     | Some(charToken) ->
-        let names = tokens |> Array.map (fun x -> 
+        let names = tokens |> Array.map (fun x ->
           line.Substring(x.LeftColumn, x.FullMatchedLength).Trim('`'))
         let takeSize = tokens.Length - identOffset
-        let finalList = 
+        let finalList =
           if charToken.TokenName = "IDENT" && Array.length(tokens) > takeSize then
             names |> Seq.take takeSize |> Seq.toList
           else
@@ -63,7 +63,7 @@ let extractNames line charIndex identOffset =
         (charToken.LeftColumn, charToken.LeftColumn + charToken.FullMatchedLength, finalList)
 
 let formatComment cmt (sb:StringBuilder) =
-    match cmt with 
+    match cmt with
     | FSharpXmlDoc.Text(s) -> sb.AppendLine(s) |> ignore
     | FSharpXmlDoc.XmlDocFileSignature(file, signature) -> ()
     | FSharpXmlDoc.None -> ()
@@ -86,9 +86,9 @@ let formatTipElement isSingle el (sb:StringBuilder) =
     | FSharpToolTipElement.CompositionError(err) ->
         sb.Append("Composition error: " + err) |> ignore
 
-let formatTip tip = 
+let formatTip tip =
   let sb = StringBuilder()
-  match tip with 
+  match tip with
   | FSharpToolTipText([single]) -> formatTipElement true single sb
   | FSharpToolTipText(its) -> for item in its do formatTipElement false item sb
   sb.ToString().Trim('\n', '\r')
@@ -102,25 +102,25 @@ let checkFile (fileName, source) = async {
     | Some(parse, check, _) -> return parse, check
     | None ->
         let! parse = checker.ParseFileInProject(fileName, source, options)
-        let! answer = checker.CheckFileInProject(parse, fileName, 0, source, options)        
+        let! answer = checker.CheckFileInProject(parse, fileName, 0, source, options)
         match answer with
         | FSharpCheckFileAnswer.Succeeded(check) -> return parse, check
         | FSharpCheckFileAnswer.Aborted -> return failwith "Parsing did not finish" }
 
 // Line & col are 1-based
 let getDeclarations (fileName, source) (line, col) = async {
-    let! parse, check = checkFile (fileName, source) 
+    let! parse, check = checkFile (fileName, source)
     let textLine = getLines(source).[line-1]
     let _, _, names = extractNames textLine col 1
     let! decls = check.GetDeclarationListInfo(Some parse, line, col, textLine, names, "")
     return [ for it in decls.Items -> it.Name, it.Glyph, formatTip it.DescriptionText ] }
 
 let getMethodOverloads (fileName, source) (line, col) = async {
-    let! parse, check = checkFile (fileName, source) 
+    let! parse, check = checkFile (fileName, source)
     let textLine = getLines(source).[line-1]
     match extractNames textLine col 0 with
     | _, _, [] -> return List.empty
-    | _, _, names -> 
+    | _, _, names ->
         let! methods = check.GetMethodsAlternate(line, col, textLine, Some names)
         return [ for m in methods.Methods -> formatTip m.Description ] }
 
@@ -132,7 +132,7 @@ type FsiSession =
   { Session : FsiEvaluationSession
     ErrorString : StringBuilder }
 
-let startSession refFolder loadScript = 
+let startSession refFolder loadScript =
   let sbOut = new StringBuilder()
   let sbErr = new StringBuilder()
   let inStream = new StringReader("")
@@ -142,9 +142,9 @@ let startSession refFolder loadScript =
   // Start the F# Interactive service process
   let refFiles = Directory.GetFiles(refFolder, "*.dll")
   let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-  let fsiSession = 
+  let fsiSession =
     FsiEvaluationSession.Create
-      ( fsiConfig, [| "/temp/fsi.exe"; "--noninteractive" |], 
+      ( fsiConfig, [| "/temp/fsi.exe"; "--noninteractive" |],
         inStream, outStream, errStream )
 
   // Load referenced libraries & run initialization script
@@ -153,9 +153,9 @@ let startSession refFolder loadScript =
     for lib in refFiles do fsiSession.EvalInteraction(sprintf "#r @\"%s\"" lib)
     fsiSession.EvalInteraction(loadScript)
     { Session = fsiSession; ErrorString = sbErr }
-  with _ -> failwithf "F# Interactive initialization failed: %s" (sbErr.ToString())  
+  with _ -> failwithf "F# Interactive initialization failed: %s" (sbErr.ToString())
 
-let evalFunScript { Session = fsiSession; ErrorString = sbErr } (code:string) = 
+let evalFunScript { Session = fsiSession; ErrorString = sbErr } (code:string) =
   try
     let code = getLines(code) |> Seq.map (fun s -> "  " + s) |> String.concat "\n"
     fsiSession.EvalInteraction("[<ReflectedDefinition>]\n" + "module Script =\n" + code)
@@ -176,8 +176,8 @@ open Suave.Http
 open Suave.Types
 open FSharp.Data
 
-type JsonTypes = JsonProvider<"""{ 
-    "declarations": 
+type JsonTypes = JsonProvider<"""{
+    "declarations":
       {"declarations":[ {"name":"Method", "glyph":1, "documentation":"Text"} ]},
     "errors":
       {"errors":[ {"startLine":1, "startColumn":1, "endLine":1, "endColumn":1, "message":"error"} ]},
@@ -202,10 +202,10 @@ let serviceHandler fsi scriptFile : WebPart = fun ctx -> async {
 
   | "/check", (_, _, source) ->
       let! _, check = checkFile (scriptFile, source)
-      let res = 
+      let res =
         [| for err in check.Errors ->
             JsonTypes.Error
-              ( err.StartLineAlternate-1, err.StartColumn, 
+              ( err.StartLineAlternate-1, err.StartColumn,
                 err.EndLineAlternate-1, err.EndColumn, err.Message ) |]
       return! ctx |> Successful.OK (JsonTypes.Errors(res).JsonValue.ToString())
 
@@ -221,7 +221,7 @@ let serviceHandler fsi scriptFile : WebPart = fun ctx -> async {
       let res = [| for name, glyph, info in decls -> JsonTypes.Declaration(name, glyph, info) |]
       return! ctx |> Successful.OK (JsonTypes.Declarations(res).JsonValue.ToString())
 
-  | _ -> 
+  | _ ->
       return! Files.browseHome ctx }
 
 let homeFolder = Path.Combine(__SOURCE_DIRECTORY__, "web")
@@ -230,14 +230,22 @@ let scriptFile = Path.Combine(__SOURCE_DIRECTORY__, "funscript/script.fsx")
 
 let fsi = startSession funFolder "#load \"Fun3D.fsx\""
 
-let app = 
+let app =
   Writers.setHeader "Cache-Control" "no-cache, no-store, must-revalidate"
   >>= Writers.setHeader "Pragma" "no-cache"
   >>= Writers.setHeader "Expires" "0"
   >>= serviceHandler fsi scriptFile
 
-let serverConfig = { defaultConfig with homeFolder = Some homeFolder }
+let serverConfig =
+  let port = System.Environment.GetEnvironmentVariable("PORT")
+  { defaultConfig with 
+      homeFolder = Some homeFolder
+      logger = Logging.Loggers.saneDefaultsFor Logging.LogLevel.Verbose
+      bindings=[ ( if port = null then HttpBinding.mk' HTTP  "127.0.0.1" 8080
+                   else HttpBinding.mk' HTTP  "0.0.0.0" (int port) ) ] }
+
 let _, server = startWebServerAsync serverConfig app
 let cts = new System.Threading.CancellationTokenSource()
 Async.Start(server, cts.Token)
-cts.Cancel()
+
+// cts.Cancel()
