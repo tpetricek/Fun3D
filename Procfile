@@ -1,1 +1,1 @@
-web: mono bin/Debug/Fun3D.exe
+web: mono vendor/mono/lib/mono/4.5/fsi.exe app.fsx
