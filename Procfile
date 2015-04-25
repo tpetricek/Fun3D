@@ -1,1 +1,1 @@
-web: fsharpi-heroku app.fsx --define:START_SERVER
+web: fsharpi-heroku --define:START_SERVER app.fsx
