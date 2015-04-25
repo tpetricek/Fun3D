@@ -222,9 +222,13 @@ let serviceHandler fsi scriptFile : WebPart = fun ctx -> async {
       return! ctx |> Successful.OK (JsonTypes.Declarations(res).JsonValue.ToString())
 
   | _ ->
-      return! Files.browseHome ctx }
+      let webDir = Path.Combine(ctx.runtime.homeDirectory, "web")
+      let subRuntime = { ctx.runtime with homeDirectory = webDir }
+      let webPart = 
+        if ctx.request.url.LocalPath <> "/" then Files.browseHome
+        else Files.browseFileHome "index.html"
+      return! webPart { ctx with runtime = subRuntime } }
 
-let homeFolder = Path.Combine(__SOURCE_DIRECTORY__, "web")
 let funFolder = Path.Combine(__SOURCE_DIRECTORY__, "funscript")
 let scriptFile = Path.Combine(__SOURCE_DIRECTORY__, "funscript/script.fsx")
 
@@ -236,19 +240,14 @@ let app =
   >>= Writers.setHeader "Expires" "0"
   >>= serviceHandler fsi scriptFile
 
+#if START_SERVER
 let serverConfig =
   let port = System.Environment.GetEnvironmentVariable("PORT")
   { defaultConfig with
-      homeFolder = Some homeFolder
+      homeFolder = Some __SOURCE_DIRECTORY__
       logger = Logging.Loggers.saneDefaultsFor Logging.LogLevel.Verbose
       bindings=[ ( if port = null then HttpBinding.mk' HTTP  "127.0.0.1" 8080
                    else HttpBinding.mk' HTTP  "0.0.0.0" (int port) ) ] }
 
-#if START_SERVER
 startWebServer serverConfig app
 #endif
-
-// let _, server = startWebServerAsync serverConfig app
-// let cts = new System.Threading.CancellationTokenSource()
-// Async.Start(server, cts.Token)
-// cts.Cancel()
