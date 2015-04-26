@@ -25,8 +25,6 @@ type ResourceAgent<'T>(restartAfter, ctor:unit -> 'T, ?cleanup) =
           do! work resource
       finally
         cleanup |> Option.iter (fun clean -> clean resource)
-        resource <- Unchecked.defaultof<_>
-        System.GC.Collect()
         resource <- ctor()
   })
   member x.Process<'R>(work) : Async<'R> = 
