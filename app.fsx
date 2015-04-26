@@ -12,13 +12,20 @@ open System.IO
 // Agent that protects a specified resource
 // ------------------------------------------------------------------------------------------------
 
-/// Agent that allows only one caller to use the specified resource
-type ResourceAgent<'T>(ctor:unit -> 'T) = 
-  let checker = ctor()
+/// Agent that allows only one caller to use the specified resource.
+/// This re-creates the resource after specified number of uses
+/// and it calls `cleanup` on it before abandoning it.
+type ResourceAgent<'T>(restartAfter, ctor:unit -> 'T, ?cleanup) = 
+  let mutable resource = ctor()
   let agent = MailboxProcessor.Start(fun inbox -> async {
     while true do
-      let! work = inbox.Receive()
-      do! work checker
+      try 
+        for i in 1 .. restartAfter do
+          let! work = inbox.Receive()
+          do! work resource
+      finally
+        cleanup |> Option.iter (fun clean -> clean resource)
+        resource <- ctor()
   })
   member x.Process<'R>(work) : Async<'R> = 
     agent.PostAndAsyncReply(fun reply checker -> async { 
@@ -166,7 +173,7 @@ let startSession refFolder loadScript =
   let fsiSession =
     FsiEvaluationSession.Create
       ( fsiConfig, [| "/temp/fsi.exe"; "--noninteractive" |],
-        inStream, outStream, errStream )
+        inStream, outStream, errStream, collectible = true )
 
   // Load referenced libraries & run initialization script
   try
@@ -214,12 +221,12 @@ let evalFunScript (scriptFile, code) checkerAgent { Session = fsiSession; ErrorS
 
   try
     match fsiSession.EvalExpression(allCode) with
-    | Some value -> return value.ReflectionValue.ToString()
-    | None -> return failwith "Evaluation failed."
+    | Some value -> return Some(value.ReflectionValue.ToString())
+    | None -> return None
   with e ->
     let errors = sbErr.ToString()
     sbErr.Clear() |> ignore
-    return failwithf "Evaluation failed: %O\nReported errors:\n%s" e errors }
+    return None }
 
 // ------------------------------------------------------------------------------------------------
 // Sharing snippets on www.fssnip.net
@@ -304,7 +311,9 @@ let serviceHandler (checker:ResourceAgent<_>) (fsi:ResourceAgent<_>) scriptFile 
   // Transform F# `source` into JavaScript and return it
   | "/run", (_, _, source) ->
       let! jscode = evalFunScript (scriptFile, source) checker |> fsi.Process
-      return! ctx |> noCacheSuccess jscode
+      match jscode with
+      | Some jscode -> return! ctx |> noCacheSuccess jscode
+      | None -> return! ctx |> RequestErrors.BAD_REQUEST "evaluation failed"
 
   // Share the snippet on www.fssnip.net and return its URL & details
   | "/share", (_, _, json) ->
@@ -358,8 +367,8 @@ let serviceHandler (checker:ResourceAgent<_>) (fsi:ResourceAgent<_>) scriptFile 
 let funFolder = Path.Combine(__SOURCE_DIRECTORY__, "funscript/bin")
 let scriptFile = Path.Combine(__SOURCE_DIRECTORY__, "funscript/bin/script.fsx")
 
-let checker = ResourceAgent(fun () -> FSharpChecker.Create())
-let fsi = ResourceAgent(fun () -> startSession funFolder loadScriptString)
+let checker = ResourceAgent(1000, fun () -> FSharpChecker.Create())
+let fsi = ResourceAgent(10, (fun () -> startSession funFolder loadScriptString), (fun fsi -> (fsi.Session :> IDisposable).Dispose()))
 let app = serviceHandler checker fsi scriptFile
 
 printfn "Start server"
