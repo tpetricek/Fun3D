@@ -377,14 +377,13 @@ let fsi =
     (fun fsi -> (fsi.Session :> IDisposable).Dispose()) )
 let app = serviceHandler checker fsi scriptFile
 
-printfn "Start server"
 #if START_SERVER
 let serverConfig =
   let port = System.Environment.GetEnvironmentVariable("PORT")
   { defaultConfig with
       homeFolder = Some __SOURCE_DIRECTORY__
       logger = Logging.Loggers.saneDefaultsFor Logging.LogLevel.Warn
-      bindings=[ ( if port = null then HttpBinding.mk' HTTP  "127.0.0.1" 8080
+      bindings=[ ( if port = null then HttpBinding.mk' HTTP  "127.0.0.1" 80
                    else HttpBinding.mk' HTTP  "0.0.0.0" (int port) ) ] }
 startWebServer serverConfig app
 #endif
