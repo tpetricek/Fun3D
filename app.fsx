@@ -220,7 +220,7 @@ type SnippetInfo = JsonProvider<"""{"title":"h","author":"h","info":"h",
 /// Request type that we want to send to www.fssnip.net
 type FsSnipTypes = JsonProvider<"""{
   "request": { "title": "Hello", "author": "Tomas Petricek", "description": "Hello world", 
-    "code": "1+2", "tags": [ "test" ], "public": true, "link": "http://tomasp.net", 
+    "code": "Fun.cube", "tags": [ "test" ], "public": true, "link": "http://tomasp.net", 
     "nugetpkgs": ["na"], "source": "fun3d" } }""">
 
 let header = 
