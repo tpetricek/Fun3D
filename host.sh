@@ -21,4 +21,4 @@ exit_code=$?
 if [ $exit_code -ne 0 ]; then
   exit $exit_code
 fi
-$MONO packages/FAKE/tools/FAKE.exe $@ --fsiargs -d:NO_COMPILED_FUN3D host.fsx
+$MONO packages/FAKE/tools/FAKE.exe $@ --fsiargs host.fsx

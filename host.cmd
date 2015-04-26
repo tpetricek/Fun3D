@@ -12,4 +12,4 @@ if not exist paket.lock (
 if errorlevel 1 (
   exit /b %errorlevel%
 )
-packages\FAKE\tools\FAKE.exe %* --fsiargs -d:NO_COMPILED_FUN3D host.fsx
+packages\FAKE\tools\FAKE.exe %* --fsiargs host.fsx

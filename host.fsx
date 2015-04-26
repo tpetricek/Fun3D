@@ -32,7 +32,7 @@ let fsiSession =
   let outStream = new StringWriter(sbOut)
   let errStream = new StringWriter(sbErr)
   let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-  let argv = Array.append [|"C:\\test.exe"; "--quiet"; "--noninteractive"|] [||]
+  let argv = Array.append [|"C:\\test.exe"; "--quiet"; "--noninteractive"; "-d:NO_COMPILED_FUN3D"|] [||]
   FsiEvaluationSession.Create(fsiConfig, argv, inStream, outStream, errStream)
 
 let reportFsiError (e:exn) =
