@@ -272,7 +272,7 @@ let getRequestParams (ctx:HttpContext) =
 
 // This script is implicitly inserted before every source code we get
 let loadScript = 
-  [| "#load \"Fun3D.fsx\"\n"
+  [| "#r \"Fun3D.Library.dll\"\n"
      "open Fun3D\n" |]
 let loadScriptString = 
   String.Concat(loadScript)
@@ -337,17 +337,21 @@ let serviceHandler fsi scriptFile : WebPart = fun ctx -> async {
 // ------------------------------------------------------------------------------------------------
 
 // Directory with FunScript binaries and 'Fun3D.fsx'
-let funFolder = Path.Combine(__SOURCE_DIRECTORY__, "funscript")
-let scriptFile = Path.Combine(__SOURCE_DIRECTORY__, "funscript/script.fsx")
+let funFolder = Path.Combine(__SOURCE_DIRECTORY__, "funscript/bin")
+let scriptFile = Path.Combine(__SOURCE_DIRECTORY__, "funscript/bin/script.fsx")
+
+printfn "Start session"
 let fsi = startSession funFolder loadScriptString
 let app = serviceHandler fsi scriptFile
 
+printfn "Start server"
 #if START_SERVER
 let serverConfig =
   let port = System.Environment.GetEnvironmentVariable("PORT")
   { defaultConfig with
       homeFolder = Some __SOURCE_DIRECTORY__
       logger = Logging.Loggers.saneDefaultsFor Logging.LogLevel.Warn
-      bindings=[ (HttpBinding.mk' HTTP  "0.0.0.0" (int port) ) ] }
+      bindings=[ ( if port = null then HttpBinding.mk' HTTP  "127.0.0.1" 8080
+                   else HttpBinding.mk' HTTP  "0.0.0.0" (int port) ) ] }
 startWebServer serverConfig app
 #endif

@@ -86,10 +86,28 @@ $(function () {
 
   // Translate code to JS and then evaluate the script
   evaluateScript = function () {
+
+    var counter = 0;
+    var finished = false;
+    function spin() {      
+      if (finished) {
+        document.getElementById("spinner").style.display = "none";
+        return;
+      } else {
+        document.getElementById("spinner").style.display = "block";
+        var offset = counter * -21;
+        document.getElementById("spinner").style.backgroundPosition = "0px " + offset + "px";
+        counter++; if (counter >= 19) counter = 0;
+        setTimeout(spin, 100);
+      }
+    };
+    setTimeout(spin,500);
+
     $.ajax({
       url: "/run", data: editor.getValue(), contentType: "text/fsharp",
       type: "POST", dataType: "text"
     }).done(function (data) {
+      finished = true;
       eval("(function(){ " + data + "})()");
     });
   };

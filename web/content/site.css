@@ -23,7 +23,6 @@ html, body {
   font-size: 50px;
   font-family: 'Bookman Old Style';
   font-weight: bold;
-  text-shadow: 0.05em 0.05em 0.05em #a8a8a8;
 }
 #main .logo {
   z-index: 100;
@@ -121,4 +120,12 @@ html, body {
 }
 .br-documentation .cmt code {
   font-style:normal;
+}
+#spinner {
+  display:none;
+  margin-left:-21px;
+  float:right;
+  width:21px;
+  height:21px;
+  background-image:url('spinner.png');
 }

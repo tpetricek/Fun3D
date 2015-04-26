@@ -1,2 +1,10 @@
 .paket/paket.exe
 packages
+funscript/bin
+funscript/obj
+bin
+obj
+*.vsp
+*.vspx
+*.psess
+*.suo
