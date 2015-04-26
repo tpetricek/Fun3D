@@ -80,7 +80,7 @@ let serverConfig =
   { defaultConfig with
       homeFolder = Some __SOURCE_DIRECTORY__
       logger = Logging.Loggers.saneDefaultsFor Logging.LogLevel.Debug
-      bindings = [ HttpBinding.mk' HTTP  "127.0.0.1" 8080] }
+      bindings = [ HttpBinding.mk' HTTP  "0.0.0.0" 8080] }
 
 Target "run" (fun _ ->
   let app ctx = currentApp.Value ctx
