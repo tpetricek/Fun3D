@@ -9,6 +9,23 @@ open System.Text
 open System.IO
 
 // ------------------------------------------------------------------------------------------------
+// Agent that protects a specified resource
+// ------------------------------------------------------------------------------------------------
+
+/// Agent that allows only one caller to use the specified resource
+type ResourceAgent<'T>(ctor:unit -> 'T) = 
+  let checker = ctor()
+  let agent = MailboxProcessor.Start(fun inbox -> async {
+    while true do
+      let! work = inbox.Receive()
+      do! work checker
+  })
+  member x.Process<'R>(work) : Async<'R> = 
+    agent.PostAndAsyncReply(fun reply checker -> async { 
+      let! res = work checker
+      reply.Reply(res) })
+
+// ------------------------------------------------------------------------------------------------
 // F# compiler service wrapper
 // ------------------------------------------------------------------------------------------------
 
@@ -96,12 +113,8 @@ let formatTip tip =
   | FSharpToolTipText(its) -> for item in its do formatTipElement false item sb
   sb.ToString().Trim('\n', '\r')
 
-/// Running F# interactive checker for doing all the things!
-/// (NOTE: I guess it might be good idea to restart this every now and then)
-let checker = FSharpChecker.Create()
-
 /// Check specified file and return parsing & type checking results
-let checkFile (fileName, source) = async {
+let checkFile (fileName, source) (checker:FSharpChecker) = async {
     let! options = checker.GetProjectOptionsFromScript(fileName, source)
     match checker.TryGetRecentTypeCheckResultsForFile(fileName, options, source) with
     | Some(parse, check, _) -> return parse, check
@@ -113,16 +126,16 @@ let checkFile (fileName, source) = async {
         | FSharpCheckFileAnswer.Aborted -> return failwith "Parsing did not finish" }
 
 /// Get declarations (completion) at the specified line & column (lines are 1-based)
-let getDeclarations (fileName, source) (line, col) = async {
-    let! parse, check = checkFile (fileName, source)
+let getDeclarations (fileName, source) (line, col) (checker:FSharpChecker) = async {
+    let! parse, check = checkFile (fileName, source) checker
     let textLine = getLines(source).[line-1]
     let _, _, names = extractNames textLine col 1
     let! decls = check.GetDeclarationListInfo(Some parse, line, col, textLine, names, "")
     return [ for it in decls.Items -> it.Name, it.Glyph, formatTip it.DescriptionText ] }
 
 /// Get method overloads (for the method before '('). Lines are 1-based
-let getMethodOverloads (fileName, source) (line, col) = async {
-    let! parse, check = checkFile (fileName, source)
+let getMethodOverloads (fileName, source) (line, col) (checker:FSharpChecker) = async {
+    let! parse, check = checkFile (fileName, source) checker
     let textLine = getLines(source).[line-1]
     match extractNames textLine col 0 with
     | _, _, [] -> return List.empty
@@ -166,9 +179,10 @@ let startSession refFolder loadScript =
 
 /// Check that the user didn't do anything to escape quoted expression
 /// (i.e. they are not trying to run any code on our server..)
-let checkScriptStructure (scriptFile, source) = async {
-  let! options = checker.GetProjectOptionsFromScript(scriptFile, source)
-  let! parsed = checker.ParseFileInProject(scriptFile, source, options)
+let checkScriptStructure (scriptFile, source) (checker:ResourceAgent<FSharpChecker>) = async {
+  let! parsed = checker.Process(fun checker -> async {
+    let! options = checker.GetProjectOptionsFromScript(scriptFile, source)
+    return! checker.ParseFileInProject(scriptFile, source, options) })
   match parsed.ParseTree with
   | Some tree ->
       match tree with
@@ -189,14 +203,14 @@ let checkScriptStructure (scriptFile, source) = async {
 
 /// Pass the specified code to FunScript and return JavaScript that we'll
 /// send back to the client (so that they can run it themselves)
-let evalFunScript { Session = fsiSession; ErrorString = sbErr } (scriptFile, code) = async {
+let evalFunScript (scriptFile, code) checkerAgent { Session = fsiSession; ErrorString = sbErr } = async {
   let allCode =
     [ yield "FunScript.Compiler.Compiler.Compile(<@"
       for line in getLines code do yield "  " + line
       yield "  |> Fun3D.Fun.show"
       yield "@>)" ]
     |> String.concat "\n"
-  do! checkScriptStructure (scriptFile, allCode)
+  do! checkScriptStructure (scriptFile, allCode) checkerAgent
 
   try
     match fsiSession.EvalExpression(allCode) with
@@ -284,12 +298,12 @@ let noCacheSuccess res =
   >>= Successful.OK(res)
 
 /// The main handler for Suave server!
-let serviceHandler fsi scriptFile : WebPart = fun ctx -> async {
+let serviceHandler (checker:ResourceAgent<_>) (fsi:ResourceAgent<_>) scriptFile ctx = async {
   match ctx.request.url.LocalPath, getRequestParams ctx with
 
   // Transform F# `source` into JavaScript and return it
   | "/run", (_, _, source) ->
-      let! jscode = evalFunScript fsi (scriptFile, source)
+      let! jscode = evalFunScript (scriptFile, source) checker |> fsi.Process
       return! ctx |> noCacheSuccess jscode
 
   // Share the snippet on www.fssnip.net and return its URL & details
@@ -299,7 +313,9 @@ let serviceHandler fsi scriptFile : WebPart = fun ctx -> async {
 
   // Type-check the source code & return list with error information
   | "/check", (_, _, source) ->
-      let! _, check = checkFile (scriptFile, loadScriptString + source)
+      let! _, check = 
+        checkFile (scriptFile, loadScriptString + source)
+        |> checker.Process
       let res =
         [| for err in check.Errors ->
             JsonTypes.Error
@@ -312,6 +328,7 @@ let serviceHandler fsi scriptFile : WebPart = fun ctx -> async {
       let! meths =
         getMethodOverloads (scriptFile, loadScriptString + source)
                            (line + loadScript.Length, col)
+        |> checker.Process
       let res = JsonTypes.Methods(Array.ofSeq meths)
       return! ctx |> noCacheSuccess (res.JsonValue.ToString())
 
@@ -320,6 +337,7 @@ let serviceHandler fsi scriptFile : WebPart = fun ctx -> async {
       let! decls =
         getDeclarations (scriptFile, loadScriptString + source)
                         (line + loadScript.Length, col)
+        |> checker.Process
       let res = [| for name, glyph, info in decls -> JsonTypes.Declaration(name, glyph, info) |]
       return! ctx |> noCacheSuccess (JsonTypes.Declarations(res).JsonValue.ToString())
 
@@ -340,9 +358,9 @@ let serviceHandler fsi scriptFile : WebPart = fun ctx -> async {
 let funFolder = Path.Combine(__SOURCE_DIRECTORY__, "funscript/bin")
 let scriptFile = Path.Combine(__SOURCE_DIRECTORY__, "funscript/bin/script.fsx")
 
-printfn "Start session"
-let fsi = startSession funFolder loadScriptString
-let app = serviceHandler fsi scriptFile
+let checker = ResourceAgent(fun () -> FSharpChecker.Create())
+let fsi = ResourceAgent(fun () -> startSession funFolder loadScriptString)
+let app = serviceHandler checker fsi scriptFile
 
 printfn "Start server"
 #if START_SERVER
