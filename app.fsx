@@ -370,9 +370,9 @@ let funFolder = Path.Combine(__SOURCE_DIRECTORY__, "funscript/bin")
 let scriptFile = Path.Combine(__SOURCE_DIRECTORY__, "funscript/bin/script.fsx")
 
 let checker = 
-  ResourceAgent(1000, fun () -> FSharpChecker.Create())
+  ResourceAgent(Int32.MaxValue, fun () -> FSharpChecker.Create())
 let fsi = 
-  ResourceAgent(5, 
+  ResourceAgent(1, 
     (fun () -> startSession funFolder loadScriptString), 
     (fun fsi -> (fsi.Session :> IDisposable).Dispose()) )
 let app = serviceHandler checker fsi scriptFile
