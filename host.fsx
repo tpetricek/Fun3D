@@ -82,7 +82,7 @@ let serverConfig =
       logger = Logging.Loggers.saneDefaultsFor Logging.LogLevel.Debug
       bindings = [ HttpBinding.mk' HTTP  "127.0.0.1" 8080] }
 
-Target "local" (fun _ ->
+Target "run" (fun _ ->
   let app ctx = currentApp.Value ctx
   let _, server = startWebServerAsync serverConfig app
   let cts = new System.Threading.CancellationTokenSource()
@@ -98,22 +98,4 @@ Target "local" (fun _ ->
   cts.Cancel() |> ignore
 )
 
-Target "build" (fun _ ->
-    !! (__SOURCE_DIRECTORY__ @@ "Fun3D.sln")
-    |> MSBuildRelease "" "Rebuild"
-    |> Log "AppBuild-Output: "
-)
-
-Target "run" (fun _ ->
-  let info = new System.Diagnostics.ProcessStartInfo(__SOURCE_DIRECTORY__ @@ "bin/Release/Fun3D.exe")
-  info.UseShellExecute <- false
-  info.WorkingDirectory <- __SOURCE_DIRECTORY__ @@ "bin/Release"
-
-  // Run the process and wait for it to complete
-  let proc = System.Diagnostics.Process.Start(info)
-  proc.WaitForExit()
-)
-
-"build" ==> "run"
-
-RunTargetOrDefault "local"
+RunTargetOrDefault "run"
