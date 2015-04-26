@@ -1,12 +1,8 @@
-﻿#load "Fun3D.fsx"
-open Fun3D
-
-let main () =
-  ( Fun.cone 
-    |> Fun.color 0xff0000 
-    |> Fun.scale (1.2, 1.2, 1.2) ) $ 
-  ( Fun.cylinder 
-    |> Fun.color 0xffff00
-    |> Fun.scale (1.0, 3.0, 1.0) 
-    |> Fun.move (0.0, -2.0, 0.0) )
-  |> Fun.move (0.0, 2.0, 0.0)
+( Fun.cone 
+  |> Fun.color 0xff0000
+  |> Fun.scale (1.2, 1.2, 1.2) ) $
+( Fun.cylinder
+  |> Fun.color 0xffff00
+  |> Fun.scale (1.0, 3.0, 1.0)
+  |> Fun.move (0.0, -2.0, 0.0) )
+|> Fun.move (0.0, 2.0, 0.0)
