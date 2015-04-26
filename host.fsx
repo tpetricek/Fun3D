@@ -114,4 +114,6 @@ Target "run" (fun _ ->
   proc.WaitForExit()
 )
 
+"build" ==> "run"
+
 RunTargetOrDefault "local"
