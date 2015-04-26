@@ -294,9 +294,15 @@ let getRequestParams (ctx:HttpContext) =
   sr.ReadToEnd()
 
 // This script is implicitly inserted before every source code we get
+#if NO_COMPILED_FUN3D
+let loadScript =
+  [| "#load \"Fun3D.fsx\"\n"
+     "open Fun3D\n" |]
+#else
 let loadScript =
   [| "#r \"Fun3D.Library.dll\"\n"
      "open Fun3D\n" |]
+#endif
 let loadScriptString =
   String.Concat(loadScript)
 
@@ -366,8 +372,13 @@ let serviceHandler (checker:ResourceAgent<_>) (fsi:ResourceAgent<_>) scriptFile 
 // ------------------------------------------------------------------------------------------------
 
 // Directory with FunScript binaries and 'Fun3D.fsx'
+#if NO_COMPILED_FUN3D
+let funFolder = Path.Combine(__SOURCE_DIRECTORY__, "funscript")
+let scriptFile = Path.Combine(__SOURCE_DIRECTORY__, "funscript/script.fsx")
+#else
 let funFolder = Path.Combine(__SOURCE_DIRECTORY__, "funscript/bin")
 let scriptFile = Path.Combine(__SOURCE_DIRECTORY__, "funscript/bin/script.fsx")
+#endif
 
 let checker = 
   ResourceAgent(Int32.MaxValue, fun () -> FSharpChecker.Create())
