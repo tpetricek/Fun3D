@@ -25,6 +25,8 @@ type ResourceAgent<'T>(restartAfter, ctor:unit -> 'T, ?cleanup) =
           do! work resource
       finally
         cleanup |> Option.iter (fun clean -> clean resource)
+        resource <- Unchecked.defaultof<_>
+        System.GC.Collect()
         resource <- ctor()
   })
   member x.Process<'R>(work) : Async<'R> = 
@@ -367,8 +369,12 @@ let serviceHandler (checker:ResourceAgent<_>) (fsi:ResourceAgent<_>) scriptFile 
 let funFolder = Path.Combine(__SOURCE_DIRECTORY__, "funscript/bin")
 let scriptFile = Path.Combine(__SOURCE_DIRECTORY__, "funscript/bin/script.fsx")
 
-let checker = ResourceAgent(1000, fun () -> FSharpChecker.Create())
-let fsi = ResourceAgent(10, (fun () -> startSession funFolder loadScriptString), (fun fsi -> (fsi.Session :> IDisposable).Dispose()))
+let checker = 
+  ResourceAgent(1000, fun () -> FSharpChecker.Create())
+let fsi = 
+  ResourceAgent(5, 
+    (fun () -> startSession funFolder loadScriptString), 
+    (fun fsi -> (fsi.Session :> IDisposable).Dispose()) )
 let app = serviceHandler checker fsi scriptFile
 
 printfn "Start server"

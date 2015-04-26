@@ -1,4 +1,4 @@
-﻿#r "packages/FSharp.Data/lib/net40/FSharp.Data.dll"
+﻿#r "../packages/FSharp.Data/lib/net40/FSharp.Data.dll"
 open FSharp.Data
 
 let shouldContain what (input:string) = 
@@ -38,6 +38,8 @@ let runs count = async {
     do! Async.Sleep(100)  
     Http.RequestString("http://localhost:8080/run", body=TextRequest source2)
     |> shouldContain "Fun__cylinder" }
+
+runs 100 |> Async.RunSynchronously
 
 Async.Parallel
   [ 
