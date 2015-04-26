@@ -14,11 +14,111 @@ html, body {
     /*height: 200px;*/
 }
 
-
 #main {
-    padding: 10px;
+  padding:10px 20px 0px 20px;
+}
+
+#main h1 {
+  margin-bottom: 30px;
+  font-size: 50px;
+  font-family: 'Bookman Old Style';
+  font-weight: bold;
+  text-shadow: 0.05em 0.05em 0.05em #a8a8a8;
+}
+#main .logo {
+  z-index: 100;
+  position: absolute;
+  right: 30px;
+  top: 5px;
+  width: 100px;
+}
+#splitscreen {
+  height:500px;
+  overflow:hidden;
+}
+#first {
+  background:black;
+  height:500px;
 }
 
 .CodeMirror {
   font-size: 20px !important;
+}
+
+.f3dalert {
+  position:absolute;
+  left:25%;
+  width:50%;
+  top:20px;
+  z-index:200;
+  padding:4px 15px 4px 15px;
+}
+
+.f3dalert p {
+  padding: 0px;
+  margin: 0px;
+  font-size:12pt;
+}
+
+#main .btn-primary {
+  background:#03469E;
+  border-color:#03469E;
+  width:140px;
+  margin-top:10px;
+  margin-left:10px;
+}
+#main .btn-primary:hover {
+  background:#174177;
+  border-color:#174177;
+}
+#main .btn-success {
+  background:#009B3B;
+  border-color:#009B3B;
+  width:140px;
+  margin-top:10px;
+}
+#main .btn-success:hover {
+  background:#0D632D;
+  border-color:#0D632D;
+}
+#kbdinfo {
+  position:relative;
+  top:5px;
+  left:20px;
+}
+#kbdinfo kbd {
+  background-color:#808080;
+}
+#share-dialog .modal-dialog {
+  width:700px;
+}
+#submit-error {
+  color:#c31515;
+  position:relative;
+  top:5px;
+  left:20px;
+  visibility:hidden;
+  font-weight:bold;
+}
+.modal-body h3 {
+  font-size:15pt;
+  margin:5px 0px 15px 0px;
+}
+#main .modal-body .btn-primary {
+  margin-left:0px;
+}
+
+.br-documentation p {
+  padding:0px;
+  margin:0px;
+}
+
+.br-documentation .sig {
+  margin-bottom:5px;
+}
+.br-documentation .cmt {
+  font-style:italic;
+}
+.br-documentation .cmt code {
+  font-style:normal;
 }

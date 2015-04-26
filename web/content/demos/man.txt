@@ -1,7 +1,4 @@
-﻿#load "Fun3D.fsx"
-open Fun3D
-
-let head =
+﻿let head =
   Fun.sphere
   |> Fun.color Color.yellow
   
@@ -27,9 +24,8 @@ let leg1 =
 let leg2 =
   leg |> Fun.move (-0.5,-4.0,0.0)
 
-let main() = 
-  head $
-  hat  $ 
-  body $
-  leg1 $
-  leg2
+head $
+hat  $ 
+body $
+leg1 $
+leg2

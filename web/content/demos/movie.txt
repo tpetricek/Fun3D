@@ -1,7 +1,3 @@
-﻿#load "Fun3D.fsx"
-open Fun3D
-
-let main() = 
-  Fun.cube
-  |> Fun.material Mat.movie
-  |> Fun.scale (5.0, 5.0, 0.5)
+﻿Fun.cube
+|> Fun.material Mat.movie
+|> Fun.scale (5.0, 5.0, 0.5)

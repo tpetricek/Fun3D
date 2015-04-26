@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width" />
-  <title>Fun 3D</title>
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <title>Fun 3D: Composing 3D objects with F#</title>
 
   <!-- Standard page design and scripts -->
   <script src="/scripts/jquery-2.0.3.js"></script>
@@ -14,8 +15,6 @@
   <!-- Fancy JavaScript libraries that we need -->
   <script src="/scripts/three.min.js"></script>
   <script src="/scripts/helvetiker_regular.typeface.js"></script>
-  <script src="/scripts/tracking.js"></script>
-  <script src="/scripts/face.min.js"></script>
 
   <!-- Styles and scripts for the F# code editor -->
   <link href="/content/funeditor.css" rel="stylesheet" />
@@ -28,72 +27,138 @@
   <script src="/scripts/codemirror/mode/fsharp.js"></script>
   <script src="/scripts/intellisense-server.js"></script>
 </head>
-<body style="background: #e0e0e0; background-size: 100% auto">
-  <div id="main" style="padding:10px 20px 0px 20px">
-    <img src="/content/logo.png" style="position:absolute;right:30px;top:5px;width:100px" />
-    <h1 style="margin-bottom:30px;font-size:50px;font-family:'Bookman Old Style';font-weight:bold">Fun 3D</h1>
 
-    <table style="width:100%;height:500px">
+<body style="background: #e0e0e0; background-size:100% auto">
+  <!-- Errors and other warning boxes that we display -->
+  <div id="alert-camera" class="f3dalert alert alert-info alert-block fade">
+    <p><strong>We need to access your camera.</strong>
+      Please allow this so that we can use camera in the scene!
+    </p>
+  </div> 
+  <div id="alert-camera-fail" class="f3dalert alert alert-warning alert-block fade">
+    <p><strong>We could not access camera.</strong>
+      <button type="button" class="close" aria-label="Close" onclick="$('#alert-camera-fail').removeClass('in');"><span aria-hidden="true">&times;</span></button>
+      Sorry, this didn't work. You can retry and allow access later.
+    </p>
+  </div> 
+  <div id="alert-camera-na" class="f3dalert alert alert-warning alert-block fade">
+    <p><strong>We could not access camera.</strong>
+      <button type="button" class="close" aria-label="Close" onclick="$('#alert-camera-na').removeClass('in');"><span aria-hidden="true">&times;</span></button>
+      Sorry, looks like your browser does not support camera.
+    </p>
+  </div> 
+
+  <!-- The main part of the screen with editor & output canvas -->
+  <div id="main">
+    <img src="/content/logo.png" class="logo" />
+    <h1>Fun 3D</h1>
+
+    <table style="width:100%;" id="splitscreen">
       <tr>
-        <td style="width:50%">
-          <div id="editor" style="width:100%;height:100%;"></div>
-        </td>
-        <td style="width:50%;background:black;" id="first"></td>
+        <td style="width:50%"><div id="editor" style="width:100%;height:100%;"></div></td>
+        <td style="width:50%"><div id="first"></div></td>
       </tr>
     </table>
+
     <div>
-      <button onclick="javascript:evaluateScript()">Run</button>
-      <span style="margin-left:20px">Tools:</span>
-      <button onclick="initTracking();">Track</button>
-      <select onchange="loadDemo(document.getElementById('demos').value);" id="demos">
-        <option value="">(Choose a demo)</option>
-        <option value="hello">Hello world</option>
-        <option value="movie">Movie box</option>
-        <option value="tower">Tower</option>
-        <option value="castle">Castle</option>
-        <option value="adcastle">Castle with video</option>
-        <option value="man">Man</option>
-      </select><br />
+      <button class="btn btn-success" onclick="javascript:evaluateScript()">Run</button>
+      <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#share-dialog">
+        Save &amp; share
+      </button>
+      <div class="btn-group dropup">
+        <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
+          Open sample &#160;<span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" role="menu">
+          <li><a href="#" onclick="loadDemo('hello');">Hello world</a></li>
+          <li><a href="#" onclick="loadDemo('movie');">Movie box</a></li>
+          <li><a href="#" onclick="loadDemo('tower');">Tower</a></li>
+          <li><a href="#" onclick="loadDemo('castle');">Castle</a></li>
+          <li><a href="#" onclick="loadDemo('adcastle');">Castle with video</a></li>
+          <li><a href="#" onclick="loadDemo('man');">Man</a></li>
+        </ul>
+      </div>
+      <button class="btn btn-primary" type="button" onclick="switchRotation(this)">Stop rotation</button>
+      <span id="kbdinfo">Use <kbd>+</kbd> and <kbd>-</kbd> for zooming in and out. Use <kbd>Ctrl+Arrows</kbd> to move the view around.</span>
     </div>
 
+    <!-- Hidden things that are used for capturing video camera -->
     <video id="monitor" autoplay width="160" height="120" style="visibility: collapse; float:left;"></video>
     <canvas id="videoImage" width="160" height="120" style="visibility: collapse; float:left;"></canvas>
-    <!-- <script>
-  navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-  window.URL = window.URL || window.webkitURL;
 
-  var camvideo = document.getElementById('monitor');
+    <!-- Dialog for entering more details when sharing a snippet -->
+    <div class="modal fade" id="share-dialog" tabindex="-1" role="dialog" aria-labelledby="Share" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel">Save &amp; share your code!</h4>
+          </div>
+          
+          <!-- This appears once snippet is saved -->
+          <div class="modal-body" style="display:none" id="modal-done">
+            <form class="form-horizontal">
+              <div class="form-group">
+                <div class="col-sm-10 col-sm-offset-1">
+                  <h3>Your snippet was succesfully saved!</h3>
+                  <p>Here is a link to your snippet so that you can review it and an address
+                   that you can copy and share with friends.</p>
+                  <ul><li><a href="#" id="result-link">Review your saved snippet</a></li></ul>
+                  <p>Address of your snippet:</p>
+                  <input type="text" class="form-control" id="result-url" value="http://fssnip.net/foo">
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="col-sm-offset-1 col-sm-10">
+                  <button class="btn btn-primary" data-dismiss="modal" onclick="closeShareDialog();">Close</button>
+                </div>
+              </div>
+            </form>
+          </div>
 
-  function gotStream(stream) {
-    alert('yo stream');
-    if (window.URL)
-    { camvideo.src = window.URL.createObjectURL(stream); }
-    else // Opera
-    { camvideo.src = stream; }
+          <!-- This appears initially when dialog opens -->
+          <div class="modal-body" id="modal-share">
+            <form class="form-horizontal">
+              <div class="form-group">
+                <label for="submit-title" class="col-sm-2 control-label">Title</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="submit-title" placeholder="Name of your project">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="submit-author" class="col-sm-2 control-label">Author</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="submit-author" placeholder="Your name">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="submit-info" class="col-sm-2 control-label">About</label>
+                <div class="col-sm-10">
+                  <textarea id="submit-info" class="form-control" placeholder="Write a few words about your snippet!" rows="3"></textarea>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                  <div class="checkbox">
+                    <label>
+                      <input id="submit-public" type="checkbox" checked="checked"> Share it with everyone?
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                  <button class="btn btn-success" onclick="saveAndShare();">Save &amp; share</button>
+                  <span id="submit-error">We need title, your name and a brief description.</span>
+                </div>
+              </div>
+            </form>
+          </div>
 
-    camvideo.onerror = function (e)
-    { stream.stop(); };
+        </div>
+      </div>
+    </div>
 
-    stream.onended = noStream;
-  }
-
-  function noStream(e) {
-    alert('no stream: ' + e.name);
-    var msg = 'No camera available.';
-    if (e.code == 1)
-    { msg = 'User denied access to use camera.'; }
-    //document.getElementById('errorMessage').textContent = msg;
-  }
-
-      if (!navigator.getUserMedia)
-      {
-          document.getElementById('errorMessage').innerHTML =
-              'Sorry. <code>navigator.getUserMedia()</code> is not available.';
-      } else {
-          navigator.getUserMedia({video: true}, gotStream, noStream);
-      }
-
-    </script> -->
   </div>
 </body>
 </html>

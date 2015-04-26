@@ -2,15 +2,18 @@
 var evaluateScript;
 var funEditor;
 
+// Switch rotation, bsaed on the text in the button..
 function switchRotation(el) {
   if (el.innerHTML == "Stop rotation") {
     el.innerHTML = "Start rotation";
-    document.fun3dRotation = 0.1;
+    document.fun3dRotation = 0.00;
   } else {
     el.innerHTML = "Stop rotation";
-    document.fun3dRotation = 0.0;
+    document.fun3dRotation = 0.01;
   }
 }
+
+// Load demo from the specified text file in content/demos
 function loadDemo(name) {
   if (name == "") return;
   $.ajax("/content/demos/" + name + ".txt").done(function (r) {
@@ -18,13 +21,55 @@ function loadDemo(name) {
   });
 }
 
+// Validate title, author and info values. If everything is good,
+// send /share request to the server, wait & display confirmation
+function saveAndShare()
+{
+  // Validate that all values have been set
+  var title = document.getElementById("submit-title").value;
+  var author = document.getElementById("submit-author").value;
+  var info = document.getElementById("submit-info").value;
+  var pub = document.getElementById("submit-public").checked;
+  if (title == "" || author == "" || info == "")
+  {
+    $("#submit-error").css('visibility', 'visible');
+    return;
+  }
+
+  // Send data using AJAX to the server
+  var data = {
+    "title": title, "author": author,
+    "info": info, "public": pub, "code": funEditor.getValue(),
+  };
+  $.ajax({
+    url: "/share", data: JSON.stringify(data),
+    contentType: "application/json", type: "POST", dataType: "JSON"
+  }).done(function (res) {
+    // Display the confirmation window with links
+    document.getElementById("result-url").value = res.url;
+    document.getElementById("result-link").href = res.url;
+    $("#modal-share").css("display", "none");
+    $("#modal-done").css("display", "block");
+  });
+}
+
+// Close the share dialog and reset it to initial state
+function closeShareDialog()
+{
+  window.setTimeout(function () {
+    document.getElementById("submit-title").value = "";
+    document.getElementById("submit-author").value = "";
+    document.getElementById("submit-info").value = "";
+    document.getElementById("submit-public").checked = true;
+    $("#modal-share").css("display", "block");
+    $("#modal-done").css("display", "none");
+  }, 500);
+}
+
 $(function () {
   // Setup the CodeMirror editor with fsharp mode
-  var editor = CodeMirror(document.getElementById('editor'),
-  {
-    value: "#load \"Fun3D.fsx\"\nopen Fun3D\n\nlet main() = \n  Fun.cube",
-    mode: 'fsharp',
-    lineNumbers: true
+  var editor = CodeMirror(document.getElementById('editor'), {
+    value: "Fun.cube", mode: 'fsharp', lineNumbers: true
   });
   editor.focus();
   funEditor = editor;

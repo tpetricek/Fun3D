@@ -1,7 +1,4 @@
-﻿#load "Fun3D.fsx"
-open Fun3D
-
-let tower x y = 
+﻿let tower x y = 
   ( Fun.cone 
     |> Fun.color 0xff0000 
     |> Fun.scale (1.2, 1.2, 1.2) ) $ 
@@ -33,8 +30,7 @@ let wall rotation =
   |> Fun.rotate (0.0, rotation, 0.0)
 
 
-let main() =
-  tower -3.0 -3.0 $ tower -3.0 3.0 $
-  tower 3.0 3.0 $ tower 3.0 -3.0 $
-  wall 0.0 $ wall 90.0 $ 
-  wall 180.0 $ wall 270.0 
+tower -3.0 -3.0 $ tower -3.0 3.0 $
+tower 3.0 3.0 $ tower 3.0 -3.0 $
+wall 0.0 $ wall 90.0 $ 
+wall 180.0 $ wall 270.0 
