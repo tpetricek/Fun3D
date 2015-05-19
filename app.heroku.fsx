@@ -2,10 +2,13 @@
 // Start the 'app' WebPart defined in 'app.fsx' on Heroku using %PORT%
 // --------------------------------------------------------------------------------------
 
+printfn "loading app"
 #load "app.fsx"
 open App
 open System
 open Suave
+
+printfn "running server"
 
 let serverConfig =
   let port = int (Environment.GetEnvironmentVariable("PORT"))
