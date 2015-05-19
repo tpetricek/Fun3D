@@ -8,3 +8,4 @@ obj
 *.vspx
 *.psess
 *.suo
+paket-files/

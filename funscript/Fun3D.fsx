@@ -278,7 +278,7 @@ module Fun =
 
   /// Changes the material of all objects wrapped in this call to the <br />
   /// specified material. You can find pre-defined materials in <code>Mat</code>.<br />
-  /// Try for example <code>Fun.cube |&gt; Mat.video</code>
+  /// Try for example <code>Fun.cube |&gt; Fun.material Mat.video</code>
   let material (material:Material) (scene:Fun3D) = f3d  <| fun ctx -> 
     ctx.RequiresMovie := material.RequiresMovie
     scene.Render { ctx with Material = material.GetMaterial() } 

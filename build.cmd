@@ -1,5 +1,4 @@
 @echo off
-cls
 .paket\paket.bootstrapper.exe
 if errorlevel 1 (
   exit /b %errorlevel%
@@ -12,4 +11,4 @@ if not exist paket.lock (
 if errorlevel 1 (
   exit /b %errorlevel%
 )
-packages\FAKE\tools\FAKE.exe %* --fsiargs host.fsx
+packages\FAKE\tools\FAKE.exe %* --fsiargs build.fsx
