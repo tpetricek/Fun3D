@@ -353,13 +353,24 @@ let serviceHandler (checker:ResourceAgent<_>) (fsi:ResourceAgent<_>) scriptFile 
 
   // Otherwise, just serve the files from 'web' using 'index.html' as default
   | _ ->
+      let local = ctx.request.url.LocalPath
+      let file = if local = "/" then "index.html" else local.Substring(1)
+      let actualFile = Path.Combine(ctx.runtime.homeDirectory, "web", file)
+
+      let mime = Suave.Http.Writers.defaultMimeTypesMap(Path.GetExtension(actualFile))
+      let setMime = 
+        match mime with 
+        | None -> fun c -> async { return None }
+        | Some mime -> Suave.Http.Writers.setMimeType mime.name
+      return! ctx |> ( setMime >>= Successful.ok(File.ReadAllBytes actualFile)) }
+(*
       let webDir = Path.Combine(ctx.runtime.homeDirectory, "web")
       let subRuntime = { ctx.runtime with homeDirectory = webDir }
       let webPart =
         if ctx.request.url.LocalPath <> "/" then Files.browseHome
         else Files.browseFileHome "index.html"
       return! webPart { ctx with runtime = subRuntime } }
-
+*)
 // ------------------------------------------------------------------------------------------------
 // Start the server (on Heroku) or expose 'app' value for 'host.fsx' local runner
 // ------------------------------------------------------------------------------------------------
